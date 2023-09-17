@@ -644,8 +644,8 @@ const FromValid = () => {
               employmentHistoryAppend({
                 company: "",
                 position: "",
-                startDate: null,
-                endDate: null,
+                startDate: "",
+                endDate: "",
               })
             }
           >
