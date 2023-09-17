@@ -16,27 +16,13 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import dayjs from "dayjs";
 
-const tomorrow = dayjs().add(1, "day");
-const today = new Date();
 const schema = Yup.object({
   personalInfo: Yup.object()
     .shape({
       firstName: Yup.string().required("First Name is required"),
       lastName: Yup.string().required("Last Name is required"),
-      dateOfBirth: Yup.date()
-        .required("Date of Birth is required")
-        .max(new Date(), "Date of Birth cannot be in the future")
-        .test(
-          "valid-date-of-birth",
-          "Please enter a valid date of birth",
-          (value) => {
-            const minDate = new Date(today);
-            minDate.setFullYear(today.getFullYear() - 150);
-            return value >= minDate;
-          }
-        ),
+      dateOfBirth: Yup.date().required("Date of Birth is required"),
       gender: Yup.string().required("Gender is required"),
       email: Yup.string().email("Invalid email").required("Email is required"),
       phone: Yup.string()
@@ -70,20 +56,24 @@ const schema = Yup.object({
       institution: Yup.string().trim().required("Institution is required"),
     })
   ),
+  CGPA: Yup.array().of(
+    Yup.object({
+      class: Yup.string().trim().required("Class is the required "),
+      gpa: Yup.string().trim().required("gpa is the required"),
+    })
+  ),
   employmentHistory: Yup.array().of(
     Yup.object({
       company: Yup.string().required("company is required"),
       position: Yup.string().required("position is required"),
       startDate: Yup.date()
         .required("Start  Date  is required")
-        .max(new Date(), "Start Date cannot be in the future")
         .nullable()
-        .typeError("Start Date must be a valid date"),
+        .typeError("must be a one element"),
       endDate: Yup.date()
         .required(" End Date is required")
-        .max(new Date(), "End Date  cannot be in the future")
         .nullable()
-        .typeError("Start Date must be a valid date"),
+        .typeError("must be a One element"),
     })
   ),
   interests: Yup.array()
@@ -124,9 +114,18 @@ const FromValid = () => {
       resolver: yupResolver(schema),
       defaultValues: defaultValueIs,
     });
-  console.log(watch());
+
   const { fields, append, prepend, remove } = useFieldArray({
     name: "education",
+    control,
+  });
+  const {
+    fields: cgpaFields,
+    append: cgpaAppend,
+    prepend: cgpaPrepend,
+    remove: cgpaRemove,
+  } = useFieldArray({
+    name: "CGPA",
     control,
   });
   const {
@@ -142,6 +141,11 @@ const FromValid = () => {
   const interestValue = ["Reading", "Hiking", "Cooking"];
 
   const onSubmitData = (data) => {
+    const cgpa = structuredClone(data.CGPA);
+    data.CGPA = cgpa.reduce((acc, curr) => {
+      acc[curr.class] = curr.gpa;
+      return acc;
+    }, {});
     console.log(data);
   };
 
@@ -183,27 +187,23 @@ const FromValid = () => {
               <Controller
                 name="personalInfo.dateOfBirth"
                 control={control}
-                render={({ field, fieldState }) => (
+                render={({ field, fieldState: { error } }) => (
                   <>
                     <DatePicker
                       {...field}
-                      inputRef={field.ref}
                       views={["year", "month", "day"]}
                       sx={{ width: 250, mt: "15px" }}
                       size="small"
                       disableFuture
                       label="DateOfBirth"
                       value={field?.value}
-                      error={fieldState.error}
-                      onChange={(newValue) => {
-                        field.onChange(newValue?.$d);
+                      slotProps={{
+                        textField: {
+                          error: !!error,
+                          helperText: error?.message,
+                        },
                       }}
                     />
-                    {fieldState.error && (
-                      <FormHelperText error>
-                        {fieldState.error.message}
-                      </FormHelperText>
-                    )}
                   </>
                 )}
               />
@@ -214,6 +214,7 @@ const FromValid = () => {
                 control={control}
                 render={({ field }) => (
                   <PhoneInput
+                    {...field}
                     inputStyle={{
                       width: 250,
                       paddingTop: "5px",
@@ -221,40 +222,33 @@ const FromValid = () => {
                     }}
                     country="RU"
                     value={field.value}
-                    onChange={(phoneNumber) => field.onChange(phoneNumber)}
-                    error={
-                      !!errors?.personalInfo?.phone &&
-                      !!errors?.personalInfo?.phone
-                    }
-                    helperText={
-                      errors?.personalInfo?.phone?.message &&
-                      errors?.personalInfo?.phone?.message
-                    }
                   />
                 )}
               />
+              <FormHelperText error>
+                {errors?.personalInfo?.phone?.message &&
+                  errors?.personalInfo?.phone?.message}
+              </FormHelperText>
             </Box>
-            <FormHelperText error>
-              {errors?.personalInfo?.phone?.message &&
-                errors?.personalInfo?.phone?.message}
-            </FormHelperText>
           </Box>
           {/* box part 2  */}
           <Box>
-            <TextField
-              variant="outlined"
-              {...register("personalInfo.lastName")}
-              sx={{ width: 250 }}
-              size="small"
-              error={
-                !!errors?.personalInfo?.lastName &&
-                !!errors?.personalInfo?.lastName
-              }
-              helperText={
-                errors?.personalInfo?.lastName?.message &&
-                errors?.personalInfo?.lastName?.message
-              }
-              label="Last Name"
+            <Controller
+              name="personalInfo.lastName"
+              control={control}
+              render={({ field, fieldState: { error } }) => {
+                return (
+                  <TextField
+                    {...field}
+                    variant="outlined"
+                    sx={{ width: 250 }}
+                    size="small"
+                    error={!!error}
+                    helperText={error?.message}
+                    label="Last Name"
+                  />
+                );
+              }}
             />
 
             <Box sx={{ width: 250, mt: "15px" }}>
@@ -520,7 +514,7 @@ const FromValid = () => {
             variant="contained"
             color="success"
             onClick={() =>
-              append({ degree: " ", institution: " ", graduationYear: " " })
+              append({ degree: "", institution: "", graduationYear: "" })
             }
           >
             Add Education +
@@ -563,27 +557,20 @@ const FromValid = () => {
                   <Controller
                     name={`employmentHistory.${index}.startDate`}
                     control={control}
-                    render={({ field, fieldState }) => (
+                    render={({ field, fieldState: { error } }) => (
                       <>
                         <DatePicker
                           {...field}
-                          inputRef={field.ref}
-                          disableFuture
-                          views={["year", "month", "day"]}
                           sx={{ width: 250, mt: "15px" }}
-                          size="small"
                           label="Start-Date"
-                          value={field?.value}
-                          error={fieldState.error}
-                          onChange={(newValue) => {
-                            field.onChange(newValue?.$d);
+                          value={field.value}
+                          slotProps={{
+                            textField: {
+                              error: !!error,
+                              helperText: error?.message,
+                            },
                           }}
                         />
-                        {fieldState.error && (
-                          <FormHelperText error>
-                            {fieldState.error.message}
-                          </FormHelperText>
-                        )}
                       </>
                     )}
                   />
@@ -607,27 +594,20 @@ const FromValid = () => {
                   <Controller
                     name={`employmentHistory.${index}.endDate`}
                     control={control}
-                    render={({ field, fieldState }) => (
+                    render={({ field, fieldState: { error } }) => (
                       <>
                         <DatePicker
                           {...field}
-                          inputRef={field.ref}
-                          views={["year", "month", "day"]}
                           sx={{ width: 250, mt: "15px" }}
-                          size="small"
-                          disableFuture
                           label="End-Date"
                           value={field?.value}
-                          error={fieldState.error}
-                          onChange={(newValue) => {
-                            field.onChange(newValue?.$d);
+                          slotProps={{
+                            textField: {
+                              error: !!error,
+                              helperText: error?.message,
+                            },
                           }}
                         />
-                        {fieldState.error && (
-                          <FormHelperText error>
-                            {fieldState.error.message}
-                          </FormHelperText>
-                        )}
                       </>
                     )}
                   />
@@ -664,8 +644,8 @@ const FromValid = () => {
               employmentHistoryAppend({
                 company: "",
                 position: "",
-                startDate: "",
-                endDate: "",
+                startDate: null,
+                endDate: null,
               })
             }
           >
@@ -674,6 +654,89 @@ const FromValid = () => {
         </Box>
 
         {/* EmploymentHistory ended  */}
+
+        {/* CGPA SECTON STARTED */}
+        <Typography align="center" mt={5} color="GrayText" variant="h6">
+          Employment History
+        </Typography>
+
+        {cgpaFields?.map((fields, index) => {
+          return (
+            <Box key={fields.id}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: "10px",
+                  mt: "20px",
+                }}
+              >
+                <Box>
+                  <Controller
+                    name={`CGPA.${index}.class`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <TextField
+                          {...field}
+                          label="Class"
+                          error={!!error}
+                          helperText={error?.message}
+                        />
+                      </>
+                    )}
+                  />
+                </Box>
+                <Box>
+                  <Controller
+                    name={`CGPA.${index}.gpa`}
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <TextField
+                          {...field}
+                          label="GPA"
+                          error={!!error}
+                          helperText={error?.message}
+                        />
+                      </>
+                    )}
+                  />
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="error"
+                  sx={{ my: 3 }}
+                  onClick={() => cgpaRemove(index)}
+                >
+                  Remove
+                </Button>
+              </Box>
+            </Box>
+          );
+        })}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => cgpaAppend({ class: "", gpa: "" })}
+          >
+            CGPA +
+          </Button>
+        </Box>
+        {/* CGPA SECTON ENDED */}
 
         {/* interested started */}
         <Typography align="center" mt={2} color="GrayText" variant="h6">
@@ -695,22 +758,18 @@ const FromValid = () => {
                 <>
                   <Autocomplete
                     multiple
-                    limitTags={2}
-                    id="multiple-limit-tags"
                     options={interestValue}
-                    getOptionLabel={(option) => option}
                     value={field.value}
-                    onChange={(_, newValue) => {
-                      setValue("interests", newValue); // Set the selected values in the form data
+                    onChange={(_event, newValue) => {
+                      field.onChange(newValue);
                     }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        inputRef={field.ref}
                         label="interest"
                         placeholder="interest"
-                        error={!!error && error}
-                        helperText={errors?.interests?.message}
+                        error={!!error}
+                        helperText={error?.message}
                       />
                     )}
                     sx={{ width: "500px" }}
