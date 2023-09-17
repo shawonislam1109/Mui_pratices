@@ -19,7 +19,7 @@ import "react-phone-input-2/lib/style.css";
 import dayjs from "dayjs";
 
 const tomorrow = dayjs().add(1, "day");
-
+const today = new Date();
 const schema = Yup.object({
   personalInfo: Yup.object()
     .shape({
@@ -27,7 +27,16 @@ const schema = Yup.object({
       lastName: Yup.string().required("Last Name is required"),
       dateOfBirth: Yup.date()
         .required("Date of Birth is required")
-        .max(new Date(), "Date of Birth cannot be in the future"),
+        .max(new Date(), "Date of Birth cannot be in the future")
+        .test(
+          "valid-date-of-birth",
+          "Please enter a valid date of birth",
+          (value) => {
+            const minDate = new Date(today);
+            minDate.setFullYear(today.getFullYear() - 150);
+            return value >= minDate;
+          }
+        ),
       gender: Yup.string().required("Gender is required"),
       email: Yup.string().email("Invalid email").required("Email is required"),
       phone: Yup.string()
@@ -65,8 +74,16 @@ const schema = Yup.object({
     Yup.object({
       company: Yup.string().required("company is required"),
       position: Yup.string().required("position is required"),
-      startDate: Yup.date().required("startDate is required"),
-      endDate: Yup.date().required("endDate is required"),
+      startDate: Yup.date()
+        .required("Start  Date  is required")
+        .max(new Date(), "Start Date cannot be in the future")
+        .nullable()
+        .typeError("Start Date must be a valid date"),
+      endDate: Yup.date()
+        .required(" End Date is required")
+        .max(new Date(), "End Date  cannot be in the future")
+        .nullable()
+        .typeError("Start Date must be a valid date"),
     })
   ),
   interests: Yup.array()
@@ -107,6 +124,7 @@ const FromValid = () => {
       resolver: yupResolver(schema),
       defaultValues: defaultValueIs,
     });
+  console.log(watch());
   const { fields, append, prepend, remove } = useFieldArray({
     name: "education",
     control,
@@ -127,7 +145,7 @@ const FromValid = () => {
     console.log(data);
   };
 
-  console.log(watch());
+  // console.log(watch());
 
   return (
     <Stack>
@@ -176,7 +194,7 @@ const FromValid = () => {
                       disableFuture
                       label="DateOfBirth"
                       value={field?.value}
-                      error={!!fieldState.error && fieldState.error}
+                      error={fieldState.error}
                       onChange={(newValue) => {
                         field.onChange(newValue?.$d);
                       }}
@@ -302,6 +320,7 @@ const FromValid = () => {
           </Box>
         </Box>
         {/* Personal Info ended */}
+
         {/* Address Info Started */}
         <Typography align="center" mt={2} color="GrayText" variant="h6">
           Address Info
@@ -416,82 +435,78 @@ const FromValid = () => {
         <Box>
           {fields?.map((fields, index) => {
             return (
-              <>
-                <Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: "10px",
-                      mt: "20px",
-                    }}
-                    key={fields.id}
-                  >
-                    <Box>
-                      <TextField
-                        label="institution"
-                        {...register(`education.${index}.institution`)}
-                        variant="outlined"
-                        size="small"
-                        sx={{ width: 250, height: 50 }}
-                        error={
-                          !!errors?.education?.[index]?.institution &&
-                          !!errors?.education?.[index]?.institution
-                        }
-                        helperText={
-                          errors?.education?.[index]?.institution?.message
-                        }
-                      />
-                      <br /> <br />
-                      <Box>
-                        <TextField
-                          label="Education Degree"
-                          {...register(`education.${index}.degree`)}
-                          variant="outlined"
-                          size="small"
-                          sx={{ width: 250, height: 50 }}
-                          error={!!errors?.education?.[index]?.degree}
-                          helperText={
-                            errors?.education?.[index]?.degree?.message
-                          }
-                        />
-                      </Box>
-                    </Box>
-                    <Box>
-                      <TextField
-                        label="graduationYear"
-                        {...register(`education.${index}.graduationYear`)}
-                        variant="outlined"
-                        size="small"
-                        sx={{ width: 250, height: 50 }}
-                        error={
-                          !!errors?.education?.[index]?.graduationYear &&
-                          !!errors?.education?.[index]?.graduationYear
-                        }
-                        helperText={
-                          errors?.education?.[index]?.graduationYear?.message
-                        }
-                      />
-                    </Box>
+              <Box key={fields.id}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    mt: "20px",
+                  }}
+                  key={fields.id}
+                >
+                  <Box>
+                    <TextField
+                      label="institution"
+                      {...register(`education.${index}.institution`)}
+                      variant="outlined"
+                      size="small"
+                      sx={{ width: 250, height: 50 }}
+                      error={
+                        !!errors?.education?.[index]?.institution &&
+                        !!errors?.education?.[index]?.institution
+                      }
+                      helperText={
+                        errors?.education?.[index]?.institution?.message
+                      }
+                    />
                     <br /> <br />
+                    <Box>
+                      <TextField
+                        label="Education Degree"
+                        {...register(`education.${index}.degree`)}
+                        variant="outlined"
+                        size="small"
+                        sx={{ width: 250, height: 50 }}
+                        error={!!errors?.education?.[index]?.degree}
+                        helperText={errors?.education?.[index]?.degree?.message}
+                      />
+                    </Box>
                   </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                    my={2}
-                  >
-                    <Button
-                      variant="contained"
-                      color="error"
-                      onClick={() => remove(index)}
-                    >
-                      Remove
-                    </Button>
+                  <Box>
+                    <TextField
+                      label="graduationYear"
+                      {...register(`education.${index}.graduationYear`)}
+                      variant="outlined"
+                      size="small"
+                      sx={{ width: 250, height: 50 }}
+                      error={
+                        !!errors?.education?.[index]?.graduationYear &&
+                        !!errors?.education?.[index]?.graduationYear
+                      }
+                      helperText={
+                        errors?.education?.[index]?.graduationYear?.message
+                      }
+                    />
                   </Box>
+                  <br /> <br />
                 </Box>
-              </>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                  my={2}
+                >
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => remove(index)}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              </Box>
             );
           })}
         </Box>
@@ -553,25 +568,16 @@ const FromValid = () => {
                         <DatePicker
                           {...field}
                           inputRef={field.ref}
+                          disableFuture
                           views={["year", "month", "day"]}
                           sx={{ width: 250, mt: "15px" }}
                           size="small"
-                          disableFuture
                           label="Start-Date"
                           value={field?.value}
+                          error={fieldState.error}
                           onChange={(newValue) => {
                             field.onChange(newValue?.$d);
                           }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              error={Boolean(
-                                `errors?.employmentHistory?.${index}?.startDate`
-                              )}
-                              helperText="Your error message"
-                              sx={{ width: "100%" }}
-                            />
-                          )}
                         />
                         {fieldState.error && (
                           <FormHelperText error>
@@ -601,33 +607,29 @@ const FromValid = () => {
                   <Controller
                     name={`employmentHistory.${index}.endDate`}
                     control={control}
-                    render={({ field, fieldState }) => {
-                      console.log(fieldState.error);
-                      console.log(field);
-                      return (
-                        <>
-                          <DatePicker
-                            {...field}
-                            inputRef={field.ref}
-                            views={["year", "month", "day"]}
-                            sx={{ width: 250, mt: "15px" }}
-                            size="small"
-                            disableFuture
-                            label="End-Date"
-                            value={field?.value}
-                            // error={fieldState.error}
-                            onChange={(newValue) => {
-                              field.onChange(newValue?.$d);
-                            }}
-                          />
-                          {fieldState.error && (
-                            <FormHelperText error>
-                              {fieldState.error.message}
-                            </FormHelperText>
-                          )}
-                        </>
-                      );
-                    }}
+                    render={({ field, fieldState }) => (
+                      <>
+                        <DatePicker
+                          {...field}
+                          inputRef={field.ref}
+                          views={["year", "month", "day"]}
+                          sx={{ width: 250, mt: "15px" }}
+                          size="small"
+                          disableFuture
+                          label="End-Date"
+                          value={field?.value}
+                          error={fieldState.error}
+                          onChange={(newValue) => {
+                            field.onChange(newValue?.$d);
+                          }}
+                        />
+                        {fieldState.error && (
+                          <FormHelperText error>
+                            {fieldState.error.message}
+                          </FormHelperText>
+                        )}
+                      </>
+                    )}
                   />
                 </Box>
               </Box>
@@ -704,10 +706,10 @@ const FromValid = () => {
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        inputMode={field.ref}
+                        inputRef={field.ref}
                         label="interest"
                         placeholder="interest"
-                        error={error}
+                        error={!!error && error}
                         helperText={errors?.interests?.message}
                       />
                     )}
