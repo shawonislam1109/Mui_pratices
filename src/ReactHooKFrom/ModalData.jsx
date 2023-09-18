@@ -17,7 +17,6 @@ import { Controller, useFieldArray, useForm } from "react-hook-form";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useEffect, useState } from "react";
-import EditModal from "./Modal";
 import axios from "axios";
 
 const schema = Yup.object({
@@ -79,7 +78,7 @@ const schema = Yup.object({
       endDate: Yup.date()
         .required(" End Date is required")
         .nullable()
-        .typeError("End date is required"),
+        .typeError("Start date is required"),
     })
   ),
   interests: Yup.array()
@@ -88,28 +87,25 @@ const schema = Yup.object({
     .required("Select at least one interest"),
 });
 
-const FromValid = () => {
-  const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
-    location.reload();
-    setOpen(false);
-  };
+const ModalData = ({ handleClose, open }) => {
   const [FormData, setFormData] = useState({});
-  useEffect(() => {
-    axios.get("http://localhost:3500/formData").then((res) => {
-      setFormData(res.data[0]);
-    });
-  }, []);
+
   const defaultValueIs = {};
-  const { register, reset, handleSubmit, formState, control, setValue, watch } =
-    useForm({
-      mode: "onChange",
-      resolver: yupResolver(schema),
-      defaultValues: defaultValueIs,
-    });
-  // console.log(FormData);
-  // console.log(defaultValueIs);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    resetField,
+    formState,
+    control,
+    setValue,
+    watch,
+  } = useForm({
+    mode: "onChange",
+    resolver: yupResolver(schema),
+    defaultValues: defaultValueIs,
+  });
 
   const { fields, append, prepend, remove } = useFieldArray({
     name: "education",
@@ -124,6 +120,7 @@ const FromValid = () => {
     name: "CGPA",
     control,
   });
+
   const {
     fields: employmentHistoryFields,
     append: employmentHistoryAppend,
@@ -133,8 +130,15 @@ const FromValid = () => {
     control,
   });
   const { errors } = formState;
-
   const interestValue = ["Reading", "Hiking", "Cooking"];
+  const updateFormdata = async (data) => {
+    const res = await axios.put("http://localhost:3500/formData/1", data);
+    const data1 = res.status;
+    if (data1) {
+      handleClose();
+      location.reload();
+    }
+  };
 
   const onSubmitData = (data) => {
     // const cgpa = structuredClone(data.CGPA);
@@ -142,9 +146,15 @@ const FromValid = () => {
     //   acc[curr.class] = curr.gpa;
     //   return acc;
     // }, {});
-    console.log(data);
+    // console.log(data);
+    updateFormdata(data);
   };
 
+  useEffect(() => {
+    axios.get("http://localhost:3500/formData").then((res) => {
+      res?.data[0] && setFormData(res?.data[0]);
+    });
+  }, []);
   useEffect(() => {
     reset({
       CGPA: FormData?.CGPA,
@@ -159,7 +169,7 @@ const FromValid = () => {
         zipCode: FormData?.addressInfo?.zipCode,
       },
       education: FormData?.education,
-      // employmentHistory: FormData?.employmentHistory,
+      //   employmentHistory: FormData?.employmentHistory,
       interests: FormData?.interests,
       personalInfo: {
         // dateOfBirth: FormData?.personalInfo?.dateOfBirth,
@@ -171,6 +181,8 @@ const FromValid = () => {
       },
     });
   }, [FormData]);
+
+  console.log(FormData);
 
   // console.log(watch());
 
@@ -195,6 +207,7 @@ const FromValid = () => {
               {...register("personalInfo.firstName")}
               sx={{ width: 250 }}
               size="small"
+              defaultValue={FormData?.personalInfo?.firstName}
               error={
                 !!errors?.personalInfo?.firstName &&
                 !!errors?.personalInfo?.firstName
@@ -653,10 +666,10 @@ const FromValid = () => {
             color="success"
             onClick={() =>
               employmentHistoryAppend({
-                company: " ",
-                position: " ",
-                startDate: null,
-                endDate: null,
+                company: "",
+                position: "",
+                startDate: "",
+                endDate: "",
               })
             }>
             Add EmployHistory +
@@ -795,17 +808,19 @@ const FromValid = () => {
           mb={3}>
           <Stack spacing={1} direction="row">
             <Button type="submit" variant="contained">
-              Submit
+              Update
             </Button>
-            <Button variant="contained" color="secondary" onClick={handleOpen}>
-              Edit
+            <Button
+              color="error"
+              onClick={() => handleClose()}
+              variant="contained">
+              Close
             </Button>
           </Stack>
         </Box>
       </form>
-      <EditModal open={open} handleClose={handleClose} />
     </Stack>
   );
 };
 
-export default FromValid;
+export default ModalData;

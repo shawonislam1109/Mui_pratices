@@ -1,0 +1,49 @@
+{
+  "formData": [
+    {
+      "interests": [
+        "Reading"
+      ],
+      "employmentHistory": [
+        {
+          "endDate": "2023-09-18T18:00:00.000Z",
+          "startDate": "2023-09-19T18:00:00.000Z",
+          "position": "sdfsdf",
+          "company": "Miranda Dorsey LLC"
+        }
+      ],
+      "CGPA": [
+        {
+          "class": "SSC",
+          "gpa": "4.50"
+        }
+      ],
+      "education": [
+        {
+          "institution": "Et quos rem voluptat",
+          "degree": "Nobis quibusdam prae",
+          "graduationYear": 1987
+        }
+      ],
+      "additionalInfo": {
+        "referredBy": "Aliquam veniam et r",
+        "comments": "Carolyn Weber"
+      },
+      "addressInfo": {
+        "city": "Dhaka",
+        "state": "Dhaka",
+        "street": "Gulshan 2",
+        "zipCode": "12125"
+      },
+      "personalInfo": {
+        "phone": "12443919881",
+        "email": "shawonislam1109@gmail.com",
+        "gender": "female",
+        "dateOfBirth": "2023-09-12T18:00:00.000Z",
+        "lastName": "akram",
+        "firstName": "Wasim"
+      },
+      "id": 1
+    }
+  ]
+}
