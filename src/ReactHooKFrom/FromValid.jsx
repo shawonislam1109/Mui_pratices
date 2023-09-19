@@ -148,16 +148,8 @@ const FromValid = () => {
   useEffect(() => {
     reset({
       CGPA: FormData?.CGPA,
-      additionalInfo: {
-        referredBy: FormData?.additionalInfo?.referredBy,
-        comments: FormData?.additionalInfo?.comments,
-      },
-      addressInfo: {
-        city: FormData?.addressInfo?.city,
-        state: FormData?.addressInfo?.state,
-        street: FormData?.addressInfo?.street,
-        zipCode: FormData?.addressInfo?.zipCode,
-      },
+      additionalInfo: FormData?.additionalInfo,
+      addressInfo: FormData?.addressInfo,
       education: FormData?.education,
       // employmentHistory: FormData?.employmentHistory,
       interests: FormData?.interests,
@@ -235,7 +227,7 @@ const FromValid = () => {
                 name="personalInfo.phone"
                 control={control}
                 defaultValue={FormData?.personalInfo?.phone}
-                render={({ field }) => (
+                render={({ field, fieldState: { error } }) => (
                   <PhoneInput
                     {...field}
                     inputStyle={{
@@ -764,6 +756,7 @@ const FromValid = () => {
                     multiple
                     options={interestValue}
                     value={field.value}
+                    // defaultValue={FormData?.interests}
                     onChange={(_event, newValue) => {
                       field.onChange(newValue);
                     }}
